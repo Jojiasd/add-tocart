@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart with Node.js</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .product {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px;
+            width: 200px;
+            text-align: center;
+        }
+        .cart {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 300px;
+        }
+        .cart-item {
+            padding: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Products</h1>
+    <div id="product-list"></div>
+
+    <div class="cart">
+        <h3>Your Cart</h3>
+        <div id="cart-items"></div>
+        <div id="total-price"></div>
+    </div>
+
+    <script>
+        // Fetch products from the server
+        async function fetchProducts() {
+            const response = await fetch('/api/products');
+            const products = await response.json();
+            const productList = document.getElementById('product-list');
+
+            products.forEach(product => {
+                const productElement = document.createElement('div');
+                productElement.classList.add('product');
+                productElement.innerHTML = `
+                    <h3>${product.name}</h3>
+                    <p>$${product.price}</p>
+                    <button onclick="addToCart(${product.id}, 1)">Add to Cart</button>
+                `;
+                productList.appendChild(productElement);
+            });
+        }
+
+        // Add product to cart
+        async function addToCart(productId, quantity) {
+            const response = await fetch('/api/cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: productId, quantity })
+            });
+            const result = await response.json();
+            updateCart(result.cart);
+        }
+
+        // Update the cart display
+        async function updateCart(cart) {
+            const cartItems = document.getElementById('cart-items');
+            const totalPrice = document.getElementById('total-price');
+            cartItems.innerHTML = '';
+            let total = 0;
+
+            cart.forEach(item => {
+                const cartItem = document.createElement('div');
+                cartItem.classList.add('cart-item');
+                cartItem.textContent = `${item.name} - $${item.price} x ${item.quantity}`;
+                cartItems.appendChild(cartItem);
+                total += item.price * item.quantity;
+            });
+
+            totalPrice.textContent = `Total: $${total}`;
+        }
+
+        // Fetch initial cart data
+        async function fetchCart() {
+            const response = await fetch('/api/cart');
+            const cart = await response.json();
+            updateCart(cart);
+        }
+
+        // Initial setup
+        fetchProducts();
+        fetchCart();
+    </script>
+
+</body>
+</html>
